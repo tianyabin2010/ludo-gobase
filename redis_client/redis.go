@@ -28,8 +28,8 @@ var (
 	NilError    = errors.New("client is nil")
 )
 
-func InitRepo() {
-	DefaultRepo = NewRedisRepo()
+func InitRepo(addr string, connTimeOut, readTimeOut, writeTimeOut, maxIdle int) {
+	DefaultRepo = NewRedisRepo(addr, connTimeOut, readTimeOut, writeTimeOut, maxIdle)
 }
 
 func NewRedisRepo(addr string, connTimeOut, readTimeOut, writeTimeOut, maxIdle int) *redisRepo {
