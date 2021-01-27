@@ -1,4 +1,4 @@
-module phabricator.ushow.media/source/ludo-gobase
+module gitee.com/ymyy/ludo-gobase
 
 go 1.15
 

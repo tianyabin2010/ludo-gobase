@@ -1,7 +1,7 @@
 package httpclient
 
 import (
-	"phabricator.ushow.media/source/ludo-gobase/metrics"
+	"gitee.com/ymyy/ludo-gobase/metrics"
 	"bytes"
 	"context"
 	"errors"

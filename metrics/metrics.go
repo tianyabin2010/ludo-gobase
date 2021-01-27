@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"phabricator.ushow.media/source/ludo-gobase/util"
+	"gitee.com/ymyy/ludo-gobase/util"
 	"encoding/json"
 	"github.com/rs/zerolog/log"
 	"net/http"

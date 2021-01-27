@@ -1,7 +1,7 @@
 package gpool
 
 import (
-	_ "phabricator.ushow.media/source/ludo-gobase/log"
+	_ "gitee.com/ymyy/ludo-gobase/log"
 	"fmt"
 	"testing"
 	"time"

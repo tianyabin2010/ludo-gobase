@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"phabricator.ushow.media/source/ludo-gobase/metrics"
+	"gitee.com/ymyy/ludo-gobase/metrics"
 	"errors"
 	"github.com/gomodule/redigo/redis"
 	"github.com/rs/zerolog/log"

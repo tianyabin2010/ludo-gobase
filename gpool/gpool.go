@@ -1,7 +1,7 @@
 package gpool
 
 import (
-	"phabricator.ushow.media/source/ludo-gobase/util"
+	"gitee.com/ymyy/ludo-gobase/util"
 	"container/list"
 	"github.com/rs/zerolog/log"
 )
