@@ -12,24 +12,19 @@ import (
 var (
 	redisTotalCommand = metrics.NewCounter("status.redis.total")
 	redisLatency      = metrics.NewGauge("status.redis.latency")
+	NilError    = errors.New("client is nil")
 )
 func ReportRedis(command string, start time.Time, commandStatus string) {
 	redisTotalCommand.Report(1, "method="+command+","+"commandStatus="+commandStatus)
 	redisLatency.Report(float64(int64(time.Since(start))/int64(time.Millisecond)), "method="+command)
 }
 
+type IRepo interface {
+	Do(string, ...interface{})(interface{}, error)
+}
 
 type redisRepo struct {
 	pool *redis.Pool
-}
-
-var (
-	DefaultRepo *redisRepo
-	NilError    = errors.New("client is nil")
-)
-
-func InitRepo(addr string, connTimeOut, readTimeOut, writeTimeOut, maxIdle int) {
-	DefaultRepo = NewRedisRepo(addr, connTimeOut, readTimeOut, writeTimeOut, maxIdle)
 }
 
 func NewRedisRepo(addr string, connTimeOut, readTimeOut, writeTimeOut, maxIdle int) *redisRepo {
@@ -87,9 +82,9 @@ func (r *redisRepo) Do(command string, args ...interface{}) (interface{}, error)
 	return nil, NilError
 }
 
-func Do(command string, args ...interface{}) (interface{}, error) {
-	if nil != DefaultRepo {
-		ret, err := DefaultRepo.Do(command, args...)
+func Do(cli IRepo, command string, args ...interface{}) (interface{}, error) {
+	if nil != cli {
+		ret, err := cli.Do(command, args...)
 		if err != nil {
 			log.Error().Err(err).Str("command", command).Msgf("redis exec error")
 		}
