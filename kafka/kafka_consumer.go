@@ -46,7 +46,7 @@ func (c *consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 	return nil
 }
 
-func SubscribeKafka(topic string, group string, addrs []string, handler KafkaHandler) (*Subscriber, error) {
+func SubscribeKafka(topic []string, group string, addrs []string, handler KafkaHandler) (*Subscriber, error) {
 	config := sarama.NewConfig()
 	config.Version = sarama.V0_11_0_0
 	config.ChannelBufferSize = 1024
@@ -55,7 +55,7 @@ func SubscribeKafka(topic string, group string, addrs []string, handler KafkaHan
 	cli, err := sarama.NewConsumerGroup(addrs, group, config)
 	if err != nil {
 		log.Error().Err(err).
-			Str("topic", topic).
+			Strs("topic", topic).
 			Str("group", group).
 			Strs("addrs", addrs).
 			Msgf("kafka sarama.NewConsumerGroup error")
@@ -72,16 +72,16 @@ func SubscribeKafka(topic string, group string, addrs []string, handler KafkaHan
 	}
 	go func() {
 		for {
-			if err := cli.Consume(ctx, []string{topic}, &consumer); err != nil {
+			if err := cli.Consume(ctx, topic, &consumer); err != nil {
 				log.Error().Err(err).
-					Str("topic", topic).
+					Strs("topic", topic).
 					Str("group", group).
 					Strs("addrs", addrs).
 					Msgf("kafka consume error")
 			}
 			if ctx.Err() != nil {
 				log.Error().Err(ctx.Err()).
-					Str("topic", topic).
+					Strs("topic", topic).
 					Str("group", group).
 					Strs("addrs", addrs).
 					Msgf("kafka subscriber cancel")
@@ -89,7 +89,7 @@ func SubscribeKafka(topic string, group string, addrs []string, handler KafkaHan
 			}
 		}
 	}()
-	log.Info().Str("topic", topic).
+	log.Info().Strs("topic", topic).
 		Str("group", group).
 		Strs("addrs", addrs).
 		Msgf("create kafka subscriber")
