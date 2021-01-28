@@ -50,7 +50,8 @@ func (c *consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 
 func SubscribeKafka(topic string, group string, addrs []string, handler KafkaHandler) (*Subscriber, error) {
 	config := sarama.NewConfig()
-	config.Version, _ = sarama.ParseKafkaVersion("2.1.1")
+	config.Version = sarama.V0_11_0_0
+	config.ChannelBufferSize = 1024
 	config.Consumer.Group.Rebalance.Strategy = sarama.BalanceStrategySticky
 	config.Consumer.Offsets.Initial = sarama.OffsetNewest
 	cli, err := sarama.NewConsumerGroup(addrs, group, config)
