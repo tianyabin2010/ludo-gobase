@@ -8,6 +8,10 @@ import (
 
 type Job func()
 
+type JobHandler interface {
+	Post(Job)
+}
+
 type worker struct {
 	JobBus chan Job
 }
