@@ -27,7 +27,7 @@ type redisRepo struct {
 	pool *redis.Pool
 }
 
-func NewRedisRepo(addr string, connTimeOut, readTimeOut, writeTimeOut, maxIdle int) *redisRepo {
+func NewRedisRepo(addr string, connTimeOut, readTimeOut, writeTimeOut, maxIdle int) IRepo {
 	ret := &redisRepo{}
 	ret.pool = &redis.Pool{
 		Dial: func() (redis.Conn, error) {
