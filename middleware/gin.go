@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"gitee.com/ymyy/ludo-gobase/metrics"
+	"github.com/tianyabin2010/ludo-gobase/metrics"
 	"bytes"
 	"fmt"
 	"io/ioutil"

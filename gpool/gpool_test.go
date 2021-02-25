@@ -1,7 +1,7 @@
 package gpool
 
 import (
-	_ "gitee.com/ymyy/ludo-gobase/log"
+	_ "github.com/tianyabin2010/ludo-gobase/log"
 	"fmt"
 	"testing"
 	"time"

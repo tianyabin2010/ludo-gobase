@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"gitee.com/ymyy/ludo-gobase/util"
+	"github.com/tianyabin2010/ludo-gobase/util"
 	"encoding/json"
 	"github.com/rs/zerolog/log"
 	"net/http"

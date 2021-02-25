@@ -1,4 +1,4 @@
-module gitee.com/ymyy/ludo-gobase
+module github.com/tianyabin2010/ludo-gobase
 
 go 1.15
 

@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"gitee.com/ymyy/ludo-gobase/metrics"
+	"github.com/tianyabin2010/ludo-gobase/metrics"
 	"errors"
 	"github.com/gomodule/redigo/redis"
 	"github.com/rs/zerolog/log"
