@@ -8,6 +8,15 @@ import (
 )
 
 func TestGpool(t *testing.T) {
+	tmp := []int{}
+	for i := 0; i < 10; i++ {
+		tmp = append(tmp, i)
+	}
+	for i, v := range tmp {
+		if v == 5 {
+			tmp = append(tmp[:i], tmp[i+1:]...)
+		}
+	}
 	pool := NewGpool("test_gpool", 10)
 	i := 0
 	for {

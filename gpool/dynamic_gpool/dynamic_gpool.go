@@ -33,16 +33,28 @@ func (w *worker) run(p *gpool) {
 	defer util.BtRecover("worker.Run")
 	for {
 		select {
-		case p.Workers <- w:
-			job := <-w.JobBus
-			if nil != job {
-				job()
-			}
-			now := time.Now()
-			w.lastUseTime = &now
 		case <-w.stopChan:
 			//TODO 从worker列表删除
+			log.Info().Str("gpool name", p.Name).
+				Int("id", w.id).
+				Msgf("worker exit")
 			return
+		default:
+			select {
+			case p.Workers <- w:
+				job := <-w.JobBus
+				if nil != job {
+					job()
+				}
+				now := time.Now()
+				w.lastUseTime = &now
+			case <-w.stopChan:
+				//TODO 从worker列表删除
+				log.Info().Str("gpool name", p.Name).
+					Int("id", w.id).
+					Msgf("worker exit")
+				return
+			}
 		}
 	}
 }
@@ -91,12 +103,13 @@ func (p *gpool) run() {
 			case now := <- ticker_30.C:
 				if len(p.WorkerList) > p.Num {
 					count := len(p.WorkerList) - p.Num
-					for _, w := range p.WorkerList {
+					for i, w := range p.WorkerList {
 						if nil != w {
 							last := w.getLastUseTime()
 							if last != nil {
 								if now.Sub(*last) > time.Second * time.Duration(p.RecycleTime) {
 									w.stop()
+									p.WorkerList = append(p.WorkerList[:i], p.WorkerList[i+1:]...)
 									count--
 									if 0 >= count {
 										break
