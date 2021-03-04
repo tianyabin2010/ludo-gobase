@@ -41,19 +41,24 @@ func (w *worker) run(p *gpool) {
 			return
 		default:
 			select {
-			case p.Workers <- w:
-				job := <-w.JobBus
+			case job := <-w.JobBus:
 				if nil != job {
 					job()
 				}
-				now := time.Now()
-				w.lastUseTime = &now
-			case <-w.stopChan:
-				//TODO 从worker列表删除
-				log.Info().Str("gpool name", p.Name).
-					Int("id", w.id).
-					Msgf("worker exit")
-				return
+			default:
+				case p.IdleWorkers <- w:
+					job := <-w.JobBus
+					if nil != job {
+						job()
+					}
+					now := time.Now()
+					w.lastUseTime = &now
+				case <-w.stopChan:
+					//TODO 从worker列表删除
+					log.Info().Str("gpool name", p.Name).
+						Int("id", w.id).
+						Msgf("worker exit")
+					return
 			}
 		}
 	}
@@ -71,12 +76,28 @@ func newWorker(id int, p *gpool) *worker {
 	return w
 }
 
+func newWorkerWithWork(id int, p *gpool, job Job) *worker {
+	now := time.Now()
+	w := &worker{
+		id:          id,
+		JobBus:      make(chan Job, 1),
+		stopChan:    make(chan struct{}, 1),
+		lastUseTime: &now,
+	}
+	log.Debug().Str("gpool name", p.Name).
+		Int("id", id).
+		Msgf("expand gpool")
+	w.JobBus <- job
+	go w.run(p)
+	return w
+}
+
 type gpool struct {
 	Name        string
 	Num         int
 	MaxNum      int
 	RecycleTime int
-	Workers     chan *worker
+	IdleWorkers chan *worker
 	WorkerList  []*worker
 	JobCacheBus chan Job
 	JobCache    list.List
@@ -90,6 +111,31 @@ func (p *gpool) jobWrapper(job Job) Job {
 	}
 }
 
+func (p *gpool) check_worker_recycle(now time.Time) {
+	defer util.BtRecover("gpool.check_worker_recycle")
+	count := len(p.WorkerList) - p.Num
+	tmpWorkerList := make([]*worker, 0, len(p.WorkerList))
+	for _, w := range p.WorkerList {
+		if nil != w {
+			del := false
+			last := w.getLastUseTime()
+			if last != nil {
+				if now.Sub(*last) > time.Second * time.Duration(p.RecycleTime) {
+					w.stop()
+					count--
+					if count >= 0 {
+						del = true
+					}
+				}
+			}
+			if !del {
+				tmpWorkerList = append(tmpWorkerList, w)
+			}
+		}
+	}
+	p.WorkerList = tmpWorkerList
+}
+
 func (p *gpool) run() {
 	defer util.BtRecover("gpool.run")
 	ticker_30 := time.NewTicker(time.Second * 30)
@@ -97,37 +143,33 @@ func (p *gpool) run() {
 		if p.JobCache.Len() <= 0 {
 			select {
 			case job := <-p.JobCacheBus:
+				if len(p.WorkerList) < p.MaxNum {
+					p.incrId++
+					w := newWorkerWithWork(p.incrId, p, job)
+					p.WorkerList = append(p.WorkerList, w)
+					continue
+				}
 				p.JobCache.PushBack(job)
 				log.Error().Msgf("gpool push back: %v, cache len: %v",
 					p.Name, p.JobCache.Len())
 			case now := <- ticker_30.C:
 				if len(p.WorkerList) > p.Num {
-					count := len(p.WorkerList) - p.Num
-					for i, w := range p.WorkerList {
-						if nil != w {
-							last := w.getLastUseTime()
-							if last != nil {
-								if now.Sub(*last) > time.Second * time.Duration(p.RecycleTime) {
-									w.stop()
-									p.WorkerList = append(p.WorkerList[:i], p.WorkerList[i+1:]...)
-									count--
-									if 0 >= count {
-										break
-									}
-								}
-							}
-						}
-					}
+					p.check_worker_recycle(now)
 				}
 			}
 		} else {
 			//TODO 这里做动态扩容
 			select {
 			case job := <-p.JobCacheBus:
+				if len(p.WorkerList) < p.MaxNum {
+					w := newWorkerWithWork(p.incrId, p, job)
+					p.WorkerList = append(p.WorkerList, w)
+					continue
+				}
 				p.JobCache.PushBack(job)
 				log.Error().Msgf("gpool push back: %v, cache len: %v",
 					p.Name, p.JobCache.Len())
-			case w := <-p.Workers:
+			case w := <-p.IdleWorkers:
 				j := p.JobCache.Front()
 				p.JobCache.Remove(j)
 				job, ok := j.Value.(Job)
@@ -143,7 +185,7 @@ func (p *gpool) run() {
 
 func (p *gpool) Post(job Job) {
 	select {
-	case w := <-p.Workers:
+	case w := <-p.IdleWorkers:
 		w.JobBus <- p.jobWrapper(job)
 	default:
 		p.JobCacheBus <- job
@@ -157,7 +199,7 @@ func NewGpool(name string, num, maxNum, recycleTime int) Pool {
 		Num:         num,
 		MaxNum:      maxNum,
 		RecycleTime: recycleTime,
-		Workers:     make(chan *worker),
+		IdleWorkers: make(chan *worker),
 		WorkerList:  make([]*worker, 0),
 		JobCacheBus: make(chan Job),
 		incrId:      0,
