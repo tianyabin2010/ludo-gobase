@@ -120,12 +120,10 @@ func (p *gpool) check_worker_recycle(now time.Time) {
 			del := false
 			last := w.getLastUseTime()
 			if last != nil {
-				if now.Sub(*last) > time.Second * time.Duration(p.RecycleTime) {
+				if count > 0 && now.Sub(*last) > time.Second * time.Duration(p.RecycleTime) {
 					w.stop()
 					count--
-					if count >= 0 {
-						del = true
-					}
+					del = true
 				}
 			}
 			if !del {
