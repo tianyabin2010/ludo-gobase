@@ -56,6 +56,10 @@ func DoRequest(url, method, body string, headers ...string) (*http.Response, err
 	hystridCh := hystrix.GoC(context.Background(), url, func(cancelFn func()) func(context.Context) error {
 		return func(ctx context.Context) error {
 			resp, err = cli.Do(req)
+			log.Debug().Str("url", url).
+				Interface("req", req).
+				Interface("resp", resp).
+				Msgf("http request")
 			if err != nil {
 				return err
 			}
