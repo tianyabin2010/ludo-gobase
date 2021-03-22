@@ -2,6 +2,7 @@ package apollo_client
 
 import (
 	"github.com/rs/zerolog/log"
+	"github.com/tianyabin2010/ludo-gobase/util"
 	apollo "github.com/zouyx/agollo/v4"
 	"github.com/zouyx/agollo/v4/env/config"
 	"github.com/zouyx/agollo/v4/storage"
@@ -20,6 +21,7 @@ type apolloListener struct {
 }
 
 func (l *apolloListener) OnChange(event *storage.ChangeEvent) {
+	util.BtRecover("apolloListener.OnChange")
 	if event.Namespace == l.NameSpace {
 		if nil != l.Callback {
 			for k, v := range event.Changes {
@@ -44,6 +46,7 @@ func (l *apolloListener) OnChange(event *storage.ChangeEvent) {
 }
 
 func (l *apolloListener) OnNewestChange(event *storage.FullChangeEvent) {
+	util.BtRecover("apolloListener.OnNewestChange")
 	if event.Namespace == l.NameSpace {
 		if nil != l.Callback {
 			for k, v := range event.Changes {
