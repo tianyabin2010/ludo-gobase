@@ -46,6 +46,7 @@ func (w *worker) run(p *gpool) {
 					job()
 				}
 			default:
+				select {
 				case p.IdleWorkers <- w:
 					job := <-w.JobBus
 					if nil != job {
@@ -59,6 +60,7 @@ func (w *worker) run(p *gpool) {
 						Int("id", w.id).
 						Msgf("worker exit")
 					return
+				}
 			}
 		}
 	}
