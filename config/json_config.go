@@ -29,13 +29,3 @@ func LoadJsonConfig(filePath string, dst interface{}) error {
 	}
 	return nil
 }
-
-func GetFileLastModTime(filepath string) int64 {
-	fi, err := os.Stat(filepath)
-	if err != nil {
-		log.Error().Err(err).
-			Msgf("GetFileLastModTime stat fileinfo error")
-		return 0
-	}
-	return fi.ModTime().Unix()
-}
