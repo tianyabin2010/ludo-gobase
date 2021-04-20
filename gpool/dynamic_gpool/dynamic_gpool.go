@@ -150,8 +150,6 @@ func (p *gpool) run() {
 					continue
 				}
 				p.JobCache.PushBack(job)
-				log.Error().Msgf("gpool push back: %v, cache len: %v",
-					p.Name, p.JobCache.Len())
 			case now := <- ticker_30.C:
 				if len(p.WorkerList) > p.Num {
 					p.check_worker_recycle(now)
@@ -167,8 +165,6 @@ func (p *gpool) run() {
 					continue
 				}
 				p.JobCache.PushBack(job)
-				log.Error().Msgf("gpool push back: %v, cache len: %v",
-					p.Name, p.JobCache.Len())
 			case w := <-p.IdleWorkers:
 				j := p.JobCache.Front()
 				p.JobCache.Remove(j)
@@ -176,8 +172,6 @@ func (p *gpool) run() {
 				if ok {
 					w.JobBus <- p.jobWrapper(job)
 				}
-				log.Error().Msgf("gpool remove: %v, cache len: %v",
-					p.Name, p.JobCache.Len())
 			}
 		}
 	}
@@ -189,7 +183,6 @@ func (p *gpool) Post(job Job) {
 		w.JobBus <- p.jobWrapper(job)
 	default:
 		p.JobCacheBus <- job
-		log.Error().Msgf("gpool %v block, cache job", p.Name)
 	}
 }
 
