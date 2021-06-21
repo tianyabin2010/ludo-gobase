@@ -25,6 +25,15 @@ func (p *Producer) Post(topic, msg string) {
 	}
 }
 
+func (p *Producer) PostByte(topic string, msg []byte) {
+	if nil != p && nil != p.producer {
+		p.producer.Input() <- &sarama.ProducerMessage{
+			Topic:     topic,
+			Value:     sarama.ByteEncoder(msg),
+		}
+	}
+}
+
 func NewProducer(addrs []string) (*Producer, error) {
 	conf := sarama.NewConfig()
 	conf.ChannelBufferSize = 1024
