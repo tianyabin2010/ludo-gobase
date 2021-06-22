@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"errors"
 	"github.com/Shopify/sarama"
 	"github.com/rs/zerolog/log"
 	"time"
@@ -65,6 +66,17 @@ func (c *byte_consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim 
 }
 
 func SubscribeKafka(topic []string, group string, addrs []string, handler KafkaHandler) (*Subscriber, error) {
+	if nil == addrs || len(addrs) <= 0 {
+		return nil, errors.New("kafka subscribe error, addrs is nil")
+	}
+	if nil == topic || len(topic) <= 0 {
+		return nil, errors.New("kafka subscribe error, topic is nil")
+	}
+	if nil == handler {
+		log.Error().Strs("topics", topic).
+			Strs("addrs", addrs).
+			Msgf("SubscribeKafkaV2 handler is nil")
+	}
 	config := sarama.NewConfig()
 	config.Version = sarama.V0_11_0_0
 	config.ChannelBufferSize = 1024
@@ -115,6 +127,17 @@ func SubscribeKafka(topic []string, group string, addrs []string, handler KafkaH
 }
 
 func SubscribeKafkaV2(topic []string, group string, addrs []string, handler KafkaByteHandler) (*Subscriber, error) {
+	if nil == addrs || len(addrs) <= 0 {
+		return nil, errors.New("kafka subscribe error, addrs is nil")
+	}
+	if nil == topic || len(topic) <= 0 {
+		return nil, errors.New("kafka subscribe error, topic is nil")
+	}
+	if nil == handler {
+		log.Error().Strs("topics", topic).
+			Strs("addrs", addrs).
+			Msgf("SubscribeKafkaV2 handler is nil")
+	}
 	config := sarama.NewConfig()
 	config.Version = sarama.V0_11_0_0
 	config.ChannelBufferSize = 1024
