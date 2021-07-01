@@ -1,6 +1,7 @@
 package apollo_client
 
 import (
+	"errors"
 	"github.com/rs/zerolog/log"
 	"github.com/tianyabin2010/ludo-gobase/util"
 	apollo "github.com/zouyx/agollo/v4"
@@ -29,10 +30,10 @@ func (l *apolloListener) OnChange(event *storage.ChangeEvent) {
 				if ok {
 					if err := l.Callback(k, []byte(data)); err == nil {
 						log.Info().Str("key", k).Interface("val", v).
-							Msgf("config update success: %v", k)
+							Msgf("onchange config update success: %v", k)
 					} else {
 						log.Error().Err(err).Str("key", k).Interface("val", v).
-							Msgf("config update error: %v", k)
+							Msgf("onchange config update error: %v", k)
 					}
 				} else {
 					log.Error().
@@ -54,10 +55,10 @@ func (l *apolloListener) OnNewestChange(event *storage.FullChangeEvent) {
 				if ok {
 					if err := l.Callback(k, []byte(data)); err == nil {
 						log.Info().Str("key", k).Interface("val", v).
-							Msgf("config update success: %v", k)
+							Msgf("onnewwestchange config update success: %v", k)
 					} else {
 						log.Error().Err(err).Str("key", k).Interface("val", v).
-							Msgf("config update error: %v", k)
+							Msgf("onnewwestchange config update error: %v", k)
 					}
 				} else {
 					log.Error().
@@ -116,4 +117,65 @@ func Init(ApolloAddr, AppId, Cluster, NameSpace string, ConfigUpdate configUpdat
 		})
 	}
 	return bInit
+}
+
+type ApolloClient struct {
+	client *apollo.Client
+	listener *apolloListener
+}
+
+func CreateApolloClient(ApolloAddr, AppId, Cluster, NameSpace string, ConfigUpdate configUpdateFunc) (*ApolloClient, error) {
+	c := &config.AppConfig{
+		AppID:         AppId,
+		Cluster:       Cluster,
+		IP:            ApolloAddr,
+		NamespaceName: NameSpace,
+	}
+	cli, err := apollo.StartWithConfig(func() (*config.AppConfig, error) {
+		return c, nil
+	})
+	if err != nil {
+		log.Error().Err(err).Msgf("config init error")
+		panic(err)
+	}
+	listener := &apolloListener{}
+	listener.Callback = ConfigUpdate
+	listener.NameSpace = NameSpace
+	cli.AddChangeListener(listener)
+	cache := cli.GetConfigCache(NameSpace)
+	bInit := true
+	if nil != cache {
+		cache.Range(func(key, val interface{}) bool {
+			k, ok := key.(string)
+			if !ok {
+				log.Error().Interface("key", key).Msgf("config init key type error")
+				return true
+			}
+			v, ok := val.(string)
+			if !ok {
+				log.Error().Interface("val", val).Msgf("config init val type error")
+				return true
+			}
+			if nil != ConfigUpdate {
+				if err := ConfigUpdate(k, []byte(v)); err == nil {
+					log.Info().Str("key", k).Str("val", string(v)).
+						Msgf("config init success: %v", k)
+				} else {
+					log.Error().Err(err).Str("key", k).Str("val", string(v)).
+						Msgf("config init error: %v", k)
+					bInit = false
+				}
+			}
+			return true
+		})
+	}
+	if bInit {
+		err = nil
+	} else {
+		err = errors.New("apollo client create error")
+	}
+	return &ApolloClient{
+		client:   cli,
+		listener: listener,
+	}, err
 }
